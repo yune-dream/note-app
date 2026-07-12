@@ -6,3 +6,4 @@ __pycache__/
 backend/venv/
 *.db
 .DS_Store
+npm-dev.log
