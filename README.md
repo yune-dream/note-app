@@ -66,21 +66,6 @@ id (int)、title (string)、content (string)、tags (string)、created_at (strin
 前端（Vercel）：导入 frontend/ 目录，设定 NEXT_PUBLIC_API_URL
 后端（Railway）：上传 backend/，启动命令 py app.py
 
-## Git 提交历史（5 个提交，3 个不同日期）
-
-1d4a148 docs: add README, prompt log, and AI code review report
-1f72214 chore: add antd dependencies and API config
-748ad3f feat: add Next.js frontend with Ant Design UI
-2369b6a feat: add Flask backend with SQLite CRUD API
-c34f5c8 chore: init project structure with Next.js + Flask
-
-## 评分项
-
-A 功能完整度 50% - 3 个独立路由 + 5 个 API 接口 + 异常处理覆盖
-B 工程规范 25% - 5 个提交跨 3 个日期 + 清晰目录结构 + AI 代码审查
-C AI 工具运用 20% - prompt_log.md 记录 7 条提示词 + 完整文档
-D 个人总结 5% - 见 outputs/summary.md
-
 ## License
 
 MIT
