@@ -1,70 +1,132 @@
-# Note App - 笔记管理软件
+# Note App
 
-一款基于 Next.js + Flask 的全栈笔记管理应用，支持笔记的增删改查、搜索和标签筛选。
+A full-stack note management application built with Next.js and Flask.
 
-## 技术栈
+## Tech Stack
 
-| 层级 | 技术 |
-|------|------|
-| 前端 | Next.js 16、React、Ant Design、Tailwind CSS |
-| 后端 | Python Flask 3、SQLite |
-| 版本控制 | Git + GitHub |
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 16, React, Ant Design, Tailwind CSS |
+| Backend | Python Flask 3, SQLite |
+| Version Control | Git + GitHub |
 
-## 安装与运行
+## Project Structure
 
-### 后端
+```
+note-app/
+frontend/         # Next.js app
+  src/app/        # Page routes
+  src/lib/        # Utilities (API, i18n, drafts)
+backend/          # Flask API
+  app.py          # 7 REST endpoints
+  models.py       # SQLite schema
+```
 
+## Installation
+
+### Backend
+
+```
 cd backend
 py -m venv venv
-venv\Scriptsctivate
+venv/Scripts/activate
 pip install -r requirements.txt
 py app.py
+```
 
-后端运行在 http://localhost:5000
+Server: http://localhost:5000
 
-### 前端
+### Frontend
 
+```
 cd frontend
 npm install
 npm run dev
+```
 
-前端运行在 http://localhost:3000
+Server: http://localhost:3000
 
-### 环境变量
+### Environment
 
-创建 frontend/.env.local：
+Create `frontend/.env.local`:
+
+```
 NEXT_PUBLIC_API_URL=http://localhost:5000
+```
 
-## 功能说明
+## Features
 
-### 前端页面（3 个独立路由）
+| Feature | Details |
+|---------|---------|
+| CRUD | Create, read, update, delete notes |
+| Markdown | Write/Preview tabs with react-markdown rendering |
+| Search | Real-time search by title and content |
+| Tags | Comma-separated tags with filter chips |
+| Pagination | 10 notes per page with page selector |
+| Sorting | By last updated, date created, or title |
+| Auto-save | Drafts saved to localStorage with restore |
+| Language | English/Chinese toggle, persisted |
+| Export | Download all notes as JSON |
+| Import | Bulk create notes from JSON file |
 
-/ - 笔记列表：展示所有笔记、搜索标题/内容、按标签筛选、删除笔记
-/notes/new - 新建笔记：填写标题、内容、标签，创建新笔记
-/notes/[id] - 笔记详情：查看笔记、切换编辑模式、保存修改、删除笔记
+## API Endpoints
 
-### 后端 API（5 个接口）
+### Notes CRUD
 
-GET /api/notes - 获取笔记列表（支持 search、tag 参数）
-POST /api/notes - 创建笔记
-GET /api/notes/:id - 获取单条笔记
-PUT /api/notes/:id - 更新笔记
-DELETE /api/notes/:id - 删除笔记
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/notes | List (search, tag, page, per_page, sort_by) |
+| POST | /api/notes | Create (title, content, tags) |
+| GET | /api/notes/:id | Get single note |
+| PUT | /api/notes/:id | Update note |
+| DELETE | /api/notes/:id | Delete note |
 
-### 笔记字段
+### Batch Operations
 
-id (int)、title (string)、content (string)、tags (string)、created_at (string)、updated_at (string)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/notes/export | Export all notes as JSON array |
+| POST | /api/notes/import | Import notes from JSON array |
 
-### 异常处理
+### Note Schema
 
-- 标题为空时 API 返回 400 错误
-- 笔记不存在时 API 返回 404 错误
-- 删除操作有二次确认弹窗
+```json
+{
+  "id": 1,
+  "title": "My Note",
+  "content": "Markdown content here",
+  "tags": "work,personal",
+  "created_at": "2026-07-10 19:30:00",
+  "updated_at": "2026-07-10 19:30:00"
+}
+```
 
-## 部署
+### Error Handling
 
-前端（Vercel）：导入 frontend/ 目录，设定 NEXT_PUBLIC_API_URL
-后端（Railway）：上传 backend/，启动命令 py app.py
+- 400: Missing title or invalid request body
+- 404: Note not found
+- Frontend shows error messages for failed API calls
+- Delete operations require confirmation dialog
+
+## Git History
+
+```
+082b96f fix: menu selection not updating on route change
+b5f79aa feat: add batch import/export notes as JSON
+4218af7 fix: Form.Item wrapping Tabs prevents content validation
+4dfddaf feat: add i18n support with English/Chinese language toggle
+17aaec3 feat: add auto-save draft feature with localStorage
+9803366 feat: add pagination, sorting, and Markdown preview
+e021bf1 restore: add back code_review.md and prompt_log.md
+ca339e1 chore: remove commit history, scoring table...
+e244cc8 docs: add README, prompt log, AI review report...
+f5ab8b6 chore: add antd dependencies and API config
+49151b3 feat: add Next.js frontend with Ant Design UI
+3dd57c7 feat: add Flask backend with SQLite CRUD API
+b180147 chore: init project structure with Next.js + Flask
+```
+
+13 commits across 4 dates (Jul 10-13).
 
 ## License
 
