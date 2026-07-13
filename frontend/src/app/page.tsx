@@ -2,23 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
-  Card,
-  Input,
-  Tag,
-  Spin,
-  Empty,
-  Button,
-  Space,
-  Popconfirm,
-  message,
-  Typography,
+  Card, Input, Tag, Spin, Empty, Button, Space, Popconfirm,
+  message, Typography, Pagination, Select,
 } from "antd";
 import {
-  PlusOutlined,
-  SearchOutlined,
-  DeleteOutlined,
-  CalendarOutlined,
-  TagsOutlined,
+  PlusOutlined, SearchOutlined, DeleteOutlined,
+  CalendarOutlined, TagsOutlined, SortAscendingOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { notesApi, Note } from "@/lib/api";
@@ -31,12 +20,23 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState("updated_at");
+  const perPage = 10;
 
   const fetchNotes = async () => {
     setLoading(true);
     try {
-      const data = await notesApi.list(search || undefined, selectedTag || undefined);
-      setNotes(data);
+      const res = await notesApi.list({
+        search: search || undefined,
+        tag: selectedTag || undefined,
+        page,
+        perPage,
+        sortBy,
+      });
+      setNotes(res.notes);
+      setTotal(res.total);
     } catch {
       message.error("Failed to fetch notes");
     } finally {
@@ -46,7 +46,11 @@ export default function HomePage() {
 
   useEffect(() => {
     fetchNotes();
-  }, [search, selectedTag]);
+  }, [search, selectedTag, page, sortBy]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, selectedTag, sortBy]);
 
   const handleDelete = async (id: number) => {
     try {
@@ -73,14 +77,25 @@ export default function HomePage() {
         </Button>
       </div>
 
-      <div className="flex gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
         <Input
           placeholder="Search notes..."
           prefix={<SearchOutlined />}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           allowClear
-          style={{ maxWidth: 360 }}
+          style={{ maxWidth: 300 }}
+        />
+        <Select
+          value={sortBy}
+          onChange={(v) => setSortBy(v)}
+          style={{ width: 150 }}
+          options={[
+            { value: "updated_at", label: "Last Updated" },
+            { value: "created_at", label: "Date Created" },
+            { value: "title", label: "Title A-Z" },
+          ]}
+          prefix={<SortAscendingOutlined />}
         />
       </div>
 
@@ -88,20 +103,13 @@ export default function HomePage() {
         <div className="mb-4 flex items-center gap-2">
           <TagsOutlined />
           <Space size={4} wrap>
-            <Tag
-              color={selectedTag === null ? "blue" : "default"}
-              style={{ cursor: "pointer" }}
-              onClick={() => setSelectedTag(null)}
-            >
+            <Tag color={selectedTag === null ? "blue" : "default"}
+              style={{ cursor: "pointer" }} onClick={() => setSelectedTag(null)}>
               All
             </Tag>
             {allTags.map((tag) => (
-              <Tag
-                key={tag}
-                color={selectedTag === tag ? "blue" : "default"}
-                style={{ cursor: "pointer" }}
-                onClick={() => setSelectedTag(tag)}
-              >
+              <Tag key={tag} color={selectedTag === tag ? "blue" : "default"}
+                style={{ cursor: "pointer" }} onClick={() => setSelectedTag(tag)}>
                 {tag}
               </Tag>
             ))}
@@ -111,10 +119,7 @@ export default function HomePage() {
 
       <Spin spinning={loading}>
         {notes.length === 0 ? (
-          <Empty
-            description={search || selectedTag ? "No matching notes" : "No notes yet"}
-            className="mt-16"
-          >
+          <Empty description={search || selectedTag ? "No matching notes" : "No notes yet"} className="mt-16">
             {!search && !selectedTag && (
               <Button type="primary" onClick={() => router.push("/notes/new")}>
                 Create first note
@@ -124,71 +129,53 @@ export default function HomePage() {
         ) : (
           <div className="grid gap-4">
             {notes.map((note) => (
-              <Card
-                key={note.id}
-                hoverable
-                size="small"
+              <Card key={note.id} hoverable size="small"
                 onClick={() => router.push(`/notes/${note.id}`)}
                 actions={[
-                  <Popconfirm
-                    key="delete"
-                    title="Delete this note?"
-                    onConfirm={(e) => {
-                      e?.stopPropagation();
-                      handleDelete(note.id);
-                    }}
-                    onCancel={(e) => e?.stopPropagation()}
-                  >
-                    <DeleteOutlined
-                      key="delete"
-                      onClick={(e) => e.stopPropagation()}
-                    />
+                  <Popconfirm key="delete" title="Delete this note?"
+                    onConfirm={(e) => { e?.stopPropagation(); handleDelete(note.id); }}
+                    onCancel={(e) => e?.stopPropagation()}>
+                    <DeleteOutlined key="delete" onClick={(e) => e.stopPropagation()} />
                   </Popconfirm>,
-                ]}
-              >
+                ]}>
                 <Card.Meta
-                  title={
-                    <Text strong ellipsis style={{ maxWidth: "100%" }}>
-                      {note.title}
-                    </Text>
-                  }
+                  title={<Text strong ellipsis style={{ maxWidth: "100%" }}>{note.title}</Text>}
                   description={
                     <>
-                      <Paragraph
-                        ellipsis={{ rows: 2 }}
-                        type="secondary"
-                        style={{ marginBottom: 8 }}
-                      >
+                      <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ marginBottom: 8 }}>
                         {note.content}
                       </Paragraph>
                       <div className="flex items-center justify-between">
                         <Space size={4}>
                           <CalendarOutlined />
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {note.updated_at}
-                          </Text>
+                          <Text type="secondary" style={{ fontSize: 12 }}>{note.updated_at}</Text>
                         </Space>
                         <Space size={4}>
-                          {note.tags
-                            ?.split(",")
-                            .map((t) => t.trim())
-                            .filter(Boolean)
-                            .slice(0, 3)
-                            .map((tag) => (
-                              <Tag key={tag} color="processing" style={{ fontSize: 11 }}>
-                                {tag}
-                              </Tag>
-                            ))}
+                          {note.tags?.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 3).map((tag) => (
+                            <Tag key={tag} color="processing" style={{ fontSize: 11 }}>{tag}</Tag>
+                          ))}
                         </Space>
                       </div>
                     </>
-                  }
-                />
+                  } />
               </Card>
             ))}
           </div>
         )}
       </Spin>
+
+      {total > perPage && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            current={page}
+            total={total}
+            pageSize={perPage}
+            onChange={(p) => setPage(p)}
+            showTotal={(t) => `${t} notes total`}
+            showSizeChanger={false}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -25,6 +25,7 @@ import {
   TagsOutlined,
 } from "@ant-design/icons";
 import { notesApi, Note } from "@/lib/api";
+import ReactMarkdown from "react-markdown";
 
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
@@ -235,7 +236,7 @@ export default function NoteDetailPage() {
             <Divider />
 
             <div className="note-content">
-              <Paragraph>{note.content}</Paragraph>
+              <ReactMarkdown>{note.content}</ReactMarkdown>
             </div>
           </Card>
         </>

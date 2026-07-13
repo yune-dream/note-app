@@ -15,6 +15,13 @@ export interface CreateNoteInput {
   tags: string;
 }
 
+export interface ListNotesResponse {
+  notes: Note[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -28,12 +35,16 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 }
 
 export const notesApi = {
-  list: (search?: string, tag?: string) => {
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (tag) params.set("tag", tag);
-    const qs = params.toString();
-    return request<Note[]>(`/api/notes${qs ? `?${qs}` : ""}`);
+  list: (params?: { search?: string; tag?: string; page?: number; perPage?: number; sortBy?: string; sortOrder?: string }) => {
+    const sp = new URLSearchParams();
+    if (params?.search) sp.set("search", params.search);
+    if (params?.tag) sp.set("tag", params.tag);
+    if (params?.page) sp.set("page", String(params.page));
+    if (params?.perPage) sp.set("per_page", String(params.perPage));
+    if (params?.sortBy) sp.set("sort_by", params.sortBy);
+    if (params?.sortOrder) sp.set("sort_order", params.sortOrder);
+    const qs = sp.toString();
+    return request<ListNotesResponse>(`/api/notes${qs ? `?${qs}` : ""}`);
   },
   get: (id: number) => request<Note>(`/api/notes/${id}`),
   create: (data: CreateNoteInput) =>

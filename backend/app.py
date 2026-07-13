@@ -5,37 +5,61 @@ from models import get_db, init_db, now
 app = Flask(__name__)
 CORS(app)
 
-# 启动时初始化数据库
 with app.app_context():
     init_db()
 
 
 @app.route("/api/notes", methods=["GET"])
 def list_notes():
-    """获取笔记列表，支持搜索和标签筛选"""
+    """List notes with search, tag filter, pagination and sorting"""
     search = request.args.get("search", "").strip()
     tag = request.args.get("tag", "").strip()
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+    sort_by = request.args.get("sort_by", "updated_at")
+    sort_order = request.args.get("sort_order", "desc")
+
+    valid_sort_fields = {"updated_at", "created_at", "title", "id"}
+    if sort_by not in valid_sort_fields:
+        sort_by = "updated_at"
+    if sort_order not in ("asc", "desc"):
+        sort_order = "desc"
 
     conn = get_db()
-    query = "SELECT * FROM notes WHERE 1=1"
+
+    count_query = "SELECT COUNT(*) as total FROM notes WHERE 1=1"
+    data_query = "SELECT * FROM notes WHERE 1=1"
     params = []
 
     if search:
-        query += " AND (title LIKE ? OR content LIKE ?)"
+        condition = " AND (title LIKE ? OR content LIKE ?)"
+        count_query += condition
+        data_query += condition
         params.extend([f"%{search}%", f"%{search}%"])
     if tag:
-        query += " AND tags LIKE ?"
+        condition = " AND tags LIKE ?"
+        count_query += condition
+        data_query += condition
         params.append(f"%{tag}%")
 
-    query += " ORDER BY updated_at DESC"
-    rows = conn.execute(query, params).fetchall()
+    total = conn.execute(count_query, params).fetchone()["total"]
+
+    offset = (page - 1) * per_page
+    data_query += f" ORDER BY {sort_by} {sort_order} LIMIT ? OFFSET ?"
+    rows = conn.execute(data_query, params + [per_page, offset]).fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+
+    return jsonify({
+        "notes": [dict(r) for r in rows],
+        "total": total,
+        "page": page,
+        "per_page": per_page,
+    })
 
 
 @app.route("/api/notes", methods=["POST"])
 def create_note():
-    """创建笔记"""
+    """Create a new note"""
     data = request.get_json()
     if not data:
         return jsonify({"error": "Request body is required"}), 400
@@ -62,7 +86,7 @@ def create_note():
 
 @app.route("/api/notes/<int:note_id>", methods=["GET"])
 def get_note(note_id):
-    """获取单条笔记"""
+    """Get a single note by ID"""
     conn = get_db()
     note = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
     conn.close()
@@ -73,7 +97,7 @@ def get_note(note_id):
 
 @app.route("/api/notes/<int:note_id>", methods=["PUT"])
 def update_note(note_id):
-    """更新笔记"""
+    """Update an existing note"""
     data = request.get_json()
     if not data:
         return jsonify({"error": "Request body is required"}), 400
@@ -104,7 +128,7 @@ def update_note(note_id):
 
 @app.route("/api/notes/<int:note_id>", methods=["DELETE"])
 def delete_note(note_id):
-    """删除笔记"""
+    """Delete a note"""
     conn = get_db()
     cursor = conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
     conn.commit()
