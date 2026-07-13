@@ -3,32 +3,19 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Card,
-  Tag,
-  Spin,
-  Button,
-  Input,
-  Form,
-  message,
-  Typography,
-  Space,
-  Popconfirm,
-  Divider,
+  Card, Tag, Spin, Button, Input, Form, message,
+  Typography, Space, Popconfirm, Divider,
 } from "antd";
 import {
-  ArrowLeftOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  SaveOutlined,
-  CloseOutlined,
-  CalendarOutlined,
-  TagsOutlined,
+  ArrowLeftOutlined, EditOutlined, DeleteOutlined,
+  SaveOutlined, CloseOutlined, CalendarOutlined, TagsOutlined,
 } from "@ant-design/icons";
-import { notesApi, Note } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
+import { notesApi, Note } from "@/lib/api";
+import { saveDraft, loadDraft, clearDraft } from "@/lib/draft";
 
 const { TextArea } = Input;
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export default function NoteDetailPage() {
   const params = useParams();
@@ -40,18 +27,21 @@ export default function NoteDetailPage() {
   const [saving, setSaving] = useState(false);
 
   const noteId = Number(params.id);
+  const draftKey = `edit_${noteId}`;
 
   const fetchNote = async () => {
     try {
       const data = await notesApi.get(noteId);
       setNote(data);
+      // Check for saved draft
+      const draft = loadDraft(draftKey);
       form.setFieldsValue({
-        title: data.title,
-        content: data.content,
-        tags: data.tags,
+        title: draft?.title ?? data.title,
+        content: draft?.content ?? data.content,
+        tags: draft?.tags ?? data.tags,
       });
     } catch {
-      message.error("笔记不存在");
+      message.error("Note not found");
       router.push("/");
     } finally {
       setLoading(false);
@@ -76,9 +66,10 @@ export default function NoteDetailPage() {
       });
       setNote(updated);
       setEditing(false);
-      message.success("保存成功");
+      clearDraft(draftKey);
+      message.success("Saved successfully");
     } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : "保存失败");
+      message.error(err instanceof Error ? err.message : "Save failed");
     } finally {
       setSaving(false);
     }
@@ -87,10 +78,10 @@ export default function NoteDetailPage() {
   const handleDelete = async () => {
     try {
       await notesApi.delete(noteId);
-      message.success("笔记已删除");
+      message.success("Note deleted");
       router.push("/");
     } catch {
-      message.error("删除失败");
+      message.error("Delete failed");
     }
   };
 
@@ -104,142 +95,75 @@ export default function NoteDetailPage() {
 
   if (!note) return null;
 
-  const tags = note.tags
-    ?.split(",")
-    .map((t) => t.trim())
-    .filter(Boolean);
+  const tags = note.tags?.split(",").map((t) => t.trim()).filter(Boolean);
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Button
-        type="link"
-        icon={<ArrowLeftOutlined />}
-        onClick={() => router.push("/")}
-        style={{ padding: 0 }}
-        className="mb-4"
-      >
-        返回笔记列表
+      <Button type="link" icon={<ArrowLeftOutlined />}
+        onClick={() => router.push("/")} style={{ padding: 0 }} className="mb-4">
+        Back to notes
       </Button>
 
       {editing ? (
         <Card>
-          <Title level={3} style={{ marginTop: 0 }}>
-            编辑笔记
-          </Title>
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleSave}
-            autoComplete="off"
-          >
-            <Form.Item
-              name="title"
-              label="标题"
-              rules={[
-                { required: true, message: "请输入笔记标题" },
-                { max: 200 },
-              ]}
-            >
+          <Title level={3} style={{ marginTop: 0 }}>Edit Note</Title>
+          <Form form={form} layout="vertical" onFinish={handleSave} autoComplete="off"
+            onValuesChange={(_, all) => saveDraft(draftKey, all)}>
+            <Form.Item name="title" label="Title"
+              rules={[{ required: true, message: "Please enter a title" }, { max: 200 }]}>
               <Input />
             </Form.Item>
-            <Form.Item
-              name="content"
-              label="内容"
-              rules={[
-                { required: true, message: "请输入笔记内容" },
-                { max: 50000 },
-              ]}
-            >
+            <Form.Item name="content" label="Content"
+              rules={[{ required: true, message: "Please enter content" }, { max: 50000 }]}>
               <TextArea rows={12} showCount maxLength={50000} />
             </Form.Item>
-            <Form.Item name="tags" label="标签">
-              <Input placeholder="多个标签用逗号分隔" />
+            <Form.Item name="tags" label="Tags">
+              <Input placeholder="Separate tags with commas" />
             </Form.Item>
             <Space>
-              <Button
-                type="primary"
-                htmlType="submit"
-                icon={<SaveOutlined />}
-                loading={saving}
-              >
-                保存
+              <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving}>
+                Save
               </Button>
-              <Button
-                icon={<CloseOutlined />}
-                onClick={() => {
-                  setEditing(false);
-                  form.setFieldsValue({
-                    title: note.title,
-                    content: note.content,
-                    tags: note.tags,
-                  });
-                }}
-              >
-                取消
+              <Button icon={<CloseOutlined />} onClick={() => {
+                setEditing(false);
+                clearDraft(draftKey);
+                form.setFieldsValue({
+                  title: note.title, content: note.content, tags: note.tags,
+                });
+              }}>
+                Cancel
               </Button>
             </Space>
           </Form>
         </Card>
       ) : (
-        <>
-          <Card
-            extra={
+        <Card extra={
+          <Space>
+            <Button icon={<EditOutlined />} onClick={() => setEditing(true)}>Edit</Button>
+            <Popconfirm title="Delete this note?" onConfirm={handleDelete}>
+              <Button danger icon={<DeleteOutlined />}>Delete</Button>
+            </Popconfirm>
+          </Space>
+        }>
+          <Title level={3}>{note.title}</Title>
+          <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
+            <Space><CalendarOutlined /><Text type="secondary">Created: {note.created_at}</Text></Space>
+            <Text type="secondary">|</Text>
+            <Space><CalendarOutlined /><Text type="secondary">Updated: {note.updated_at}</Text></Space>
+          </div>
+          {tags.length > 0 && (
+            <div className="mb-4">
               <Space>
-                <Button
-                  icon={<EditOutlined />}
-                  onClick={() => setEditing(true)}
-                >
-                  编辑
-                </Button>
-                <Popconfirm
-                  title="确认删除这条笔记？"
-                  onConfirm={handleDelete}
-                >
-                  <Button danger icon={<DeleteOutlined />}>
-                    删除
-                  </Button>
-                </Popconfirm>
-              </Space>
-            }
-          >
-            <Title level={3}>{note.title}</Title>
-
-            <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
-              <Space>
-                <CalendarOutlined />
-                <Text type="secondary">
-                  创建于 {note.created_at}
-                </Text>
-              </Space>
-              <Text type="secondary">|</Text>
-              <Space>
-                <CalendarOutlined />
-                <Text type="secondary">
-                  更新于 {note.updated_at}
-                </Text>
+                <TagsOutlined />
+                {tags.map((tag) => (<Tag key={tag} color="blue">{tag}</Tag>))}
               </Space>
             </div>
-
-            {tags.length > 0 && (
-              <div className="mb-4">
-                <Space>
-                  <TagsOutlined />
-                  {tags.map((tag) => (
-                    <Tag key={tag} color="blue">
-                      {tag}
-                    </Tag>
-                  ))}
-                </Space>
-              </div>
-            )}
-
-            <Divider />
-
-            <div className="note-content">
-              <ReactMarkdown>{note.content}</ReactMarkdown>
-            </div>
-          </Card>
-        </>
+          )}
+          <Divider />
+          <div className="note-content">
+            <ReactMarkdown>{note.content}</ReactMarkdown>
+          </div>
+        </Card>
       )}
     </div>
   );

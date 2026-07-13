@@ -1,19 +1,54 @@
 "use client";
 
-import { useState } from "react";
-import { Form, Input, Button, message, Typography, Card, Tabs } from "antd";
-import { ArrowLeftOutlined, SaveOutlined } from "@ant-design/icons";
+import { useEffect, useState } from "react";
+import { Form, Input, Button, message, Typography, Card, Tabs, Tag } from "antd";
+import {
+  ArrowLeftOutlined, SaveOutlined,
+  FormOutlined, EyeOutlined,
+} from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { notesApi } from "@/lib/api";
+import { saveDraft, loadDraft, clearDraft, hasDraft } from "@/lib/draft";
 
 const { TextArea } = Input;
+const DRAFT_KEY = "new_note";
 
 export default function NewNotePage() {
   const router = useRouter();
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [content, setContent] = useState("");
+  const [draftSaved, setDraftSaved] = useState(false);
+
+  // Restore draft on mount
+  useEffect(() => {
+    const draft = loadDraft(DRAFT_KEY);
+    if (draft) {
+      form.setFieldsValue({
+        title: draft.title || "",
+        content: draft.content || "",
+        tags: draft.tags || "",
+      });
+      setContent(draft.content || "");
+    }
+  }, []);
+
+  // Auto-save to localStorage on changes
+  useEffect(() => {
+    if (!draftSaved) return;
+    const timer = setTimeout(() => {
+      const values = form.getFieldsValue();
+      saveDraft(DRAFT_KEY, values);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [draftSaved, content]);
+
+  const handleValuesChange = (_: unknown, all: Record<string, string>) => {
+    setContent(all.content || "");
+    setDraftSaved(true);
+    saveDraft(DRAFT_KEY, all);
+  };
 
   const handleSubmit = async (values: {
     title: string;
@@ -27,6 +62,7 @@ export default function NewNotePage() {
         content: values.content.trim(),
         tags: values.tags.trim(),
       });
+      clearDraft(DRAFT_KEY);
       message.success("Note created successfully");
       router.push(`/notes/${note.id}`);
     } catch (err: unknown) {
@@ -48,7 +84,16 @@ export default function NewNotePage() {
         Back to notes
       </Button>
 
-      <Typography.Title level={3}>New Note</Typography.Title>
+      <div className="flex items-center justify-between mb-4">
+        <Typography.Title level={3} style={{ margin: 0 }}>
+          New Note
+        </Typography.Title>
+        {draftSaved && (
+          <Tag icon={<FormOutlined />} color="processing">
+            Draft auto-saved
+          </Tag>
+        )}
+      </div>
 
       <Card>
         <Form
@@ -56,7 +101,7 @@ export default function NewNotePage() {
           layout="vertical"
           onFinish={handleSubmit}
           autoComplete="off"
-          onValuesChange={(_, all) => setContent(all.content || "")}
+          onValuesChange={handleValuesChange}
         >
           <Form.Item
             name="title"
@@ -81,7 +126,7 @@ export default function NewNotePage() {
               items={[
                 {
                   key: "write",
-                  label: "Write",
+                  label: <span><FormOutlined /> Write</span>,
                   children: (
                     <TextArea
                       rows={12}
@@ -93,7 +138,7 @@ export default function NewNotePage() {
                 },
                 {
                   key: "preview",
-                  label: "Preview",
+                  label: <span><EyeOutlined /> Preview</span>,
                   children: (
                     <div
                       className="note-content"
@@ -132,6 +177,21 @@ export default function NewNotePage() {
             >
               Save Note
             </Button>
+            {hasDraft(DRAFT_KEY) && (
+              <Button
+                type="link"
+                danger
+                onClick={() => {
+                  clearDraft(DRAFT_KEY);
+                  form.resetFields();
+                  setContent("");
+                  setDraftSaved(false);
+                }}
+                style={{ marginLeft: 12 }}
+              >
+                Discard draft
+              </Button>
+            )}
           </Form.Item>
         </Form>
       </Card>
