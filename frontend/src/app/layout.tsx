@@ -10,11 +10,14 @@ import Link from "next/link";
 import "./globals.css";
 import { LangProvider, useLang } from "@/lib/LangContext";
 import type { Locale } from "@/lib/i18n";
+import { usePathname } from "next/navigation";
 
 const { Header, Content } = Layout;
 
 function HeaderContent() {
   const { t, locale, setLocale } = useLang();
+  const pathname = usePathname();
+  const selectedKey = pathname === "/notes/new" ? "/notes/new" : "/";
 
   const langItems = [
     { key: "zh", label: "中文" },
@@ -30,7 +33,7 @@ function HeaderContent() {
       <Menu
         theme="dark"
         mode="horizontal"
-        defaultSelectedKeys={["/"]}
+        selectedKeys={[selectedKey]}
         items={[
           {
             key: "/",
