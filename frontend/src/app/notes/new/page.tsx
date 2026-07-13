@@ -21,6 +21,7 @@ export default function NewNotePage() {
   const [submitting, setSubmitting] = useState(false);
   const [content, setContent] = useState("");
   const [draftSaved, setDraftSaved] = useState(false);
+  const [tabKey, setTabKey] = useState("write");
 
   useEffect(() => {
     const draft = loadDraft(DRAFT_KEY);
@@ -86,27 +87,30 @@ export default function NewNotePage() {
             <Input placeholder={t("new.titlePlaceholder")} />
           </Form.Item>
 
+          {/* Tabs control (outside Form.Item, purely for UI) */}
+          <div className="mb-2">
+            <Tabs activeKey={tabKey} onChange={setTabKey}
+              items={[
+                { key: "write", label: <span><FormOutlined /> {t("new.write")}</span> },
+                { key: "preview", label: <span><EyeOutlined /> {t("new.preview")}</span> },
+              ]} />
+          </div>
+
+          {/* Form.Item directly wraps the input component for proper form binding */}
           <Form.Item name="content" label={t("new.contentLabel")}
             rules={[{ required: true, message: t("new.contentRequired") }, { max: 50000, message: t("new.contentMax") }]}>
-            <Tabs items={[
-              {
-                key: "write", label: <span><FormOutlined /> {t("new.write")}</span>,
-                children: <TextArea rows={12} placeholder={t("new.contentPlaceholder")}
-                  showCount maxLength={50000} />,
-              },
-              {
-                key: "preview", label: <span><EyeOutlined /> {t("new.preview")}</span>,
-                children: (
-                  <div className="note-content" style={{
-                    minHeight: 300, padding: "8px 12px",
-                    border: "1px solid #d9d9d9", borderRadius: 6, background: "#fff",
-                  }}>
-                    {content ? <ReactMarkdown>{content}</ReactMarkdown>
-                      : <Typography.Text type="secondary">{t("new.noPreview")}</Typography.Text>}
-                  </div>
-                ),
-              },
-            ]} />
+            {tabKey === "write" ? (
+              <TextArea rows={12} placeholder={t("new.contentPlaceholder")}
+                showCount maxLength={50000} />
+            ) : (
+              <div className="note-content" style={{
+                minHeight: 300, padding: "8px 12px",
+                border: "1px solid #d9d9d9", borderRadius: 6, background: "#fff",
+              }}>
+                {content ? <ReactMarkdown>{content}</ReactMarkdown>
+                  : <Typography.Text type="secondary">{t("new.noPreview")}</Typography.Text>}
+              </div>
+            )}
           </Form.Item>
 
           <Form.Item name="tags" label={t("new.tagsLabel")}>
