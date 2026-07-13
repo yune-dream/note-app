@@ -138,5 +138,42 @@ def delete_note(note_id):
     return jsonify({"message": "Note deleted"})
 
 
+@app.route("/api/notes/export", methods=["GET"])
+def export_notes():
+    """Export all notes as JSON"""
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM notes ORDER BY updated_at DESC").fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+
+@app.route("/api/notes/import", methods=["POST"])
+def import_notes():
+    """Import notes from JSON array"""
+    data = request.get_json()
+    if not isinstance(data, list):
+        return jsonify({"error": "Expected an array of notes"}), 400
+
+    conn = get_db()
+    ts = now()
+    imported = 0
+
+    for item in data:
+        title = (item.get("title") or "").strip()
+        content = (item.get("content") or "").strip()
+        tags = (item.get("tags") or "").strip()
+        if not title:
+            continue
+        conn.execute(
+            "INSERT INTO notes (title, content, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
+            (title, content, tags, ts, ts),
+        )
+        imported += 1
+
+    conn.commit()
+    conn.close()
+    return jsonify({"imported": imported, "total": len(data)})
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

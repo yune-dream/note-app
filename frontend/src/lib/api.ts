@@ -61,4 +61,10 @@ export const notesApi = {
     request<{ message: string }>(`/api/notes/${id}`, {
       method: "DELETE",
     }),
+  exportAll: () => request<Note[]>("/api/notes/export"),
+  importNotes: (notes: { title: string; content: string; tags: string }[]) =>
+    request<{ imported: number; total: number }>("/api/notes/import", {
+      method: "POST",
+      body: JSON.stringify(notes),
+    }),
 };

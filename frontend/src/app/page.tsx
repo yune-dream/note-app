@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Card, Input, Tag, Spin, Empty, Button, Space, Popconfirm,
   message, Typography, Pagination, Select,
 } from "antd";
 import {
   PlusOutlined, SearchOutlined, DeleteOutlined,
+  DownloadOutlined, UploadOutlined,
   CalendarOutlined, TagsOutlined, SortAscendingOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
-import { notesApi, Note } from "@/lib/api";
+import { notesApi } from "@/lib/api";
 import { useLang } from "@/lib/LangContext";
 
 const { Text, Paragraph } = Typography;
@@ -18,6 +19,7 @@ const { Text, Paragraph } = Typography;
 export default function HomePage() {
   const router = useRouter();
   const { t } = useLang();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -57,6 +59,38 @@ export default function HomePage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      const allNotes = await notesApi.exportAll();
+      const blob = new Blob([JSON.stringify(allNotes, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `notes_export_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      message.success(t("notes.exportSuccess"));
+    } catch {
+      message.error(t("notes.exportFailed"));
+    }
+  };
+
+  const handleImport = async (file: File) => {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (!Array.isArray(data)) {
+        message.error(t("notes.importInvalid"));
+        return;
+      }
+      const result = await notesApi.importNotes(data);
+      message.success(t("notes.importSuccess").replace("{n}", String(result.imported)));
+      fetchNotes();
+    } catch {
+      message.error(t("notes.importFailed"));
+    }
+  };
+
   const allTags = Array.from(
     new Set(notes.flatMap((n) => n.tags.split(",").map((t) => t.trim()).filter(Boolean)))
   );
@@ -65,9 +99,24 @@ export default function HomePage() {
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <Typography.Title level={3} style={{ margin: 0 }}>{t("notes.all")}</Typography.Title>
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push("/notes/new")}>
-          {t("notes.new")}
-        </Button>
+        <Space>
+          <Button icon={<DownloadOutlined />} onClick={handleExport}>{t("notes.export")}</Button>
+          <Button icon={<UploadOutlined />} onClick={() => fileInputRef.current?.click()}>{t("notes.import")}</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push("/notes/new")}>
+            {t("notes.new")}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleImport(file);
+              e.target.value = "";
+            }}
+          />
+        </Space>
       </div>
 
       <div className="flex items-center gap-3 mb-4 flex-wrap">
@@ -164,7 +213,7 @@ export default function HomePage() {
             total={total}
             pageSize={perPage}
             onChange={(p) => setPage(p)}
-            showTotal={(t) => `${t("notes.totalPrefix")} ${t} ${t("notes.totalSuffix")}`}
+            showTotal={(total) => `${t("notes.totalPrefix")} ${total} ${t("notes.totalSuffix")}`}
             showSizeChanger={false}
           />
         </div>
