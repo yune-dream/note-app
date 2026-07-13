@@ -13,6 +13,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import { notesApi, Note } from "@/lib/api";
 import { saveDraft, loadDraft, clearDraft } from "@/lib/draft";
+import { useLang } from "@/lib/LangContext";
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
@@ -20,6 +21,7 @@ const { Title, Text } = Typography;
 export default function NoteDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useLang();
   const [form] = Form.useForm();
   const [note, setNote] = useState<Note | null>(null);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,6 @@ export default function NoteDetailPage() {
     try {
       const data = await notesApi.get(noteId);
       setNote(data);
-      // Check for saved draft
       const draft = loadDraft(draftKey);
       form.setFieldsValue({
         title: draft?.title ?? data.title,
@@ -41,22 +42,16 @@ export default function NoteDetailPage() {
         tags: draft?.tags ?? data.tags,
       });
     } catch {
-      message.error("Note not found");
+      message.error(t("detail.notFound"));
       router.push("/");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (noteId) fetchNote();
-  }, [noteId]);
+  useEffect(() => { if (noteId) fetchNote(); }, [noteId]);
 
-  const handleSave = async (values: {
-    title: string;
-    content: string;
-    tags: string;
-  }) => {
+  const handleSave = async (values: Record<string, string>) => {
     setSaving(true);
     try {
       const updated = await notesApi.update(noteId, {
@@ -67,9 +62,9 @@ export default function NoteDetailPage() {
       setNote(updated);
       setEditing(false);
       clearDraft(draftKey);
-      message.success("Saved successfully");
+      message.success(t("detail.saved"));
     } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : "Save failed");
+      message.error(err instanceof Error ? err.message : t("detail.saveFailed"));
     } finally {
       setSaving(false);
     }
@@ -78,21 +73,18 @@ export default function NoteDetailPage() {
   const handleDelete = async () => {
     try {
       await notesApi.delete(noteId);
-      message.success("Note deleted");
+      message.success(t("detail.deleted"));
       router.push("/");
     } catch {
-      message.error("Delete failed");
+      message.error(t("detail.deleteFailed"));
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center" style={{ minHeight: 300 }}>
-        <Spin size="large" />
-      </div>
-    );
+    return <div className="flex justify-center items-center" style={{ minHeight: 300 }}>
+      <Spin size="large" />
+    </div>;
   }
-
   if (!note) return null;
 
   const tags = note.tags?.split(",").map((t) => t.trim()).filter(Boolean);
@@ -101,28 +93,28 @@ export default function NoteDetailPage() {
     <div className="max-w-3xl mx-auto">
       <Button type="link" icon={<ArrowLeftOutlined />}
         onClick={() => router.push("/")} style={{ padding: 0 }} className="mb-4">
-        Back to notes
+        {t("detail.back")}
       </Button>
 
       {editing ? (
         <Card>
-          <Title level={3} style={{ marginTop: 0 }}>Edit Note</Title>
+          <Title level={3} style={{ marginTop: 0 }}>{t("detail.editTitle")}</Title>
           <Form form={form} layout="vertical" onFinish={handleSave} autoComplete="off"
             onValuesChange={(_, all) => saveDraft(draftKey, all)}>
-            <Form.Item name="title" label="Title"
-              rules={[{ required: true, message: "Please enter a title" }, { max: 200 }]}>
+            <Form.Item name="title" label={t("detail.titleLabel")}
+              rules={[{ required: true, message: t("detail.titleRequired") }, { max: 200 }]}>
               <Input />
             </Form.Item>
-            <Form.Item name="content" label="Content"
-              rules={[{ required: true, message: "Please enter content" }, { max: 50000 }]}>
+            <Form.Item name="content" label={t("detail.contentLabel")}
+              rules={[{ required: true, message: t("detail.contentRequired") }, { max: 50000 }]}>
               <TextArea rows={12} showCount maxLength={50000} />
             </Form.Item>
-            <Form.Item name="tags" label="Tags">
-              <Input placeholder="Separate tags with commas" />
+            <Form.Item name="tags" label={t("detail.tagsLabel")}>
+              <Input placeholder={t("detail.tagsPlaceholder")} />
             </Form.Item>
             <Space>
               <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={saving}>
-                Save
+                {t("detail.save")}
               </Button>
               <Button icon={<CloseOutlined />} onClick={() => {
                 setEditing(false);
@@ -131,7 +123,7 @@ export default function NoteDetailPage() {
                   title: note.title, content: note.content, tags: note.tags,
                 });
               }}>
-                Cancel
+                {t("detail.cancel")}
               </Button>
             </Space>
           </Form>
@@ -139,17 +131,17 @@ export default function NoteDetailPage() {
       ) : (
         <Card extra={
           <Space>
-            <Button icon={<EditOutlined />} onClick={() => setEditing(true)}>Edit</Button>
-            <Popconfirm title="Delete this note?" onConfirm={handleDelete}>
-              <Button danger icon={<DeleteOutlined />}>Delete</Button>
+            <Button icon={<EditOutlined />} onClick={() => setEditing(true)}>{t("detail.edit")}</Button>
+            <Popconfirm title={t("detail.deleteConfirm")} onConfirm={handleDelete}>
+              <Button danger icon={<DeleteOutlined />}>{t("detail.delete")}</Button>
             </Popconfirm>
           </Space>
         }>
           <Title level={3}>{note.title}</Title>
           <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
-            <Space><CalendarOutlined /><Text type="secondary">Created: {note.created_at}</Text></Space>
+            <Space><CalendarOutlined /><Text type="secondary">{t("detail.created")} {note.created_at}</Text></Space>
             <Text type="secondary">|</Text>
-            <Space><CalendarOutlined /><Text type="secondary">Updated: {note.updated_at}</Text></Space>
+            <Space><CalendarOutlined /><Text type="secondary">{t("detail.updated")} {note.updated_at}</Text></Space>
           </div>
           {tags.length > 0 && (
             <div className="mb-4">
@@ -160,9 +152,7 @@ export default function NoteDetailPage() {
             </div>
           )}
           <Divider />
-          <div className="note-content">
-            <ReactMarkdown>{note.content}</ReactMarkdown>
-          </div>
+          <div className="note-content"><ReactMarkdown>{note.content}</ReactMarkdown></div>
         </Card>
       )}
     </div>

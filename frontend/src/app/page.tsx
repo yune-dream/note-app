@@ -11,11 +11,13 @@ import {
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import { notesApi, Note } from "@/lib/api";
+import { useLang } from "@/lib/LangContext";
 
 const { Text, Paragraph } = Typography;
 
 export default function HomePage() {
   const router = useRouter();
+  const { t } = useLang();
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -31,34 +33,27 @@ export default function HomePage() {
       const res = await notesApi.list({
         search: search || undefined,
         tag: selectedTag || undefined,
-        page,
-        perPage,
-        sortBy,
+        page, perPage, sortBy,
       });
       setNotes(res.notes);
       setTotal(res.total);
     } catch {
-      message.error("Failed to fetch notes");
+      message.error(t("notes.fetchFailed"));
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchNotes();
-  }, [search, selectedTag, page, sortBy]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, selectedTag, sortBy]);
+  useEffect(() => { fetchNotes(); }, [search, selectedTag, page, sortBy]);
+  useEffect(() => { setPage(1); }, [search, selectedTag, sortBy]);
 
   const handleDelete = async (id: number) => {
     try {
       await notesApi.delete(id);
-      message.success("Note deleted");
+      message.success(t("notes.deleteSuccess"));
       fetchNotes();
     } catch {
-      message.error("Delete failed");
+      message.error(t("notes.deleteFailed"));
     }
   };
 
@@ -69,17 +64,15 @@ export default function HomePage() {
   return (
     <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
-        <Typography.Title level={3} style={{ margin: 0 }}>
-          All Notes
-        </Typography.Title>
+        <Typography.Title level={3} style={{ margin: 0 }}>{t("notes.all")}</Typography.Title>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => router.push("/notes/new")}>
-          New Note
+          {t("notes.new")}
         </Button>
       </div>
 
       <div className="flex items-center gap-3 mb-4 flex-wrap">
         <Input
-          placeholder="Search notes..."
+          placeholder={t("notes.search")}
           prefix={<SearchOutlined />}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -91,9 +84,9 @@ export default function HomePage() {
           onChange={(v) => setSortBy(v)}
           style={{ width: 150 }}
           options={[
-            { value: "updated_at", label: "Last Updated" },
-            { value: "created_at", label: "Date Created" },
-            { value: "title", label: "Title A-Z" },
+            { value: "updated_at", label: t("sort.lastUpdated") },
+            { value: "created_at", label: t("sort.dateCreated") },
+            { value: "title", label: t("sort.titleAZ") },
           ]}
           prefix={<SortAscendingOutlined />}
         />
@@ -105,7 +98,7 @@ export default function HomePage() {
           <Space size={4} wrap>
             <Tag color={selectedTag === null ? "blue" : "default"}
               style={{ cursor: "pointer" }} onClick={() => setSelectedTag(null)}>
-              All
+              {t("notes.allTags")}
             </Tag>
             {allTags.map((tag) => (
               <Tag key={tag} color={selectedTag === tag ? "blue" : "default"}
@@ -119,10 +112,10 @@ export default function HomePage() {
 
       <Spin spinning={loading}>
         {notes.length === 0 ? (
-          <Empty description={search || selectedTag ? "No matching notes" : "No notes yet"} className="mt-16">
+          <Empty description={search || selectedTag ? t("notes.noMatch") : t("notes.noNotes")} className="mt-16">
             {!search && !selectedTag && (
               <Button type="primary" onClick={() => router.push("/notes/new")}>
-                Create first note
+                {t("notes.createFirst")}
               </Button>
             )}
           </Empty>
@@ -132,7 +125,7 @@ export default function HomePage() {
               <Card key={note.id} hoverable size="small"
                 onClick={() => router.push(`/notes/${note.id}`)}
                 actions={[
-                  <Popconfirm key="delete" title="Delete this note?"
+                  <Popconfirm key="delete" title={t("notes.deleteConfirm")}
                     onConfirm={(e) => { e?.stopPropagation(); handleDelete(note.id); }}
                     onCancel={(e) => e?.stopPropagation()}>
                     <DeleteOutlined key="delete" onClick={(e) => e.stopPropagation()} />
@@ -151,7 +144,7 @@ export default function HomePage() {
                           <Text type="secondary" style={{ fontSize: 12 }}>{note.updated_at}</Text>
                         </Space>
                         <Space size={4}>
-                          {note.tags?.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 3).map((tag) => (
+                          {note.tags?.split(",").map((tt) => tt.trim()).filter(Boolean).slice(0, 3).map((tag) => (
                             <Tag key={tag} color="processing" style={{ fontSize: 11 }}>{tag}</Tag>
                           ))}
                         </Space>
@@ -171,7 +164,7 @@ export default function HomePage() {
             total={total}
             pageSize={perPage}
             onChange={(p) => setPage(p)}
-            showTotal={(t) => `${t} notes total`}
+            showTotal={(t) => `${t("notes.totalPrefix")} ${t} ${t("notes.totalSuffix")}`}
             showSizeChanger={false}
           />
         </div>

@@ -3,25 +3,25 @@
 import { useEffect, useState } from "react";
 import { Form, Input, Button, message, Typography, Card, Tabs, Tag } from "antd";
 import {
-  ArrowLeftOutlined, SaveOutlined,
-  FormOutlined, EyeOutlined,
+  ArrowLeftOutlined, SaveOutlined, FormOutlined, EyeOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import { notesApi } from "@/lib/api";
 import { saveDraft, loadDraft, clearDraft, hasDraft } from "@/lib/draft";
+import { useLang } from "@/lib/LangContext";
 
 const { TextArea } = Input;
 const DRAFT_KEY = "new_note";
 
 export default function NewNotePage() {
   const router = useRouter();
+  const { t } = useLang();
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [content, setContent] = useState("");
   const [draftSaved, setDraftSaved] = useState(false);
 
-  // Restore draft on mount
   useEffect(() => {
     const draft = loadDraft(DRAFT_KEY);
     if (draft) {
@@ -34,12 +34,10 @@ export default function NewNotePage() {
     }
   }, []);
 
-  // Auto-save to localStorage on changes
   useEffect(() => {
     if (!draftSaved) return;
     const timer = setTimeout(() => {
-      const values = form.getFieldsValue();
-      saveDraft(DRAFT_KEY, values);
+      saveDraft(DRAFT_KEY, form.getFieldsValue());
     }, 500);
     return () => clearTimeout(timer);
   }, [draftSaved, content]);
@@ -50,11 +48,7 @@ export default function NewNotePage() {
     saveDraft(DRAFT_KEY, all);
   };
 
-  const handleSubmit = async (values: {
-    title: string;
-    content: string;
-    tags: string;
-  }) => {
+  const handleSubmit = async (values: Record<string, string>) => {
     setSubmitting(true);
     try {
       const note = await notesApi.create({
@@ -63,10 +57,10 @@ export default function NewNotePage() {
         tags: values.tags.trim(),
       });
       clearDraft(DRAFT_KEY);
-      message.success("Note created successfully");
+      message.success(t("new.success"));
       router.push(`/notes/${note.id}`);
     } catch (err: unknown) {
-      message.error(err instanceof Error ? err.message : "Create failed");
+      message.error(err instanceof Error ? err.message : t("new.failed"));
     } finally {
       setSubmitting(false);
     }
@@ -74,122 +68,63 @@ export default function NewNotePage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <Button
-        type="link"
-        icon={<ArrowLeftOutlined />}
-        onClick={() => router.push("/")}
-        className="mb-4"
-        style={{ padding: 0 }}
-      >
-        Back to notes
+      <Button type="link" icon={<ArrowLeftOutlined />}
+        onClick={() => router.push("/")} style={{ padding: 0 }} className="mb-4">
+        {t("new.back")}
       </Button>
 
       <div className="flex items-center justify-between mb-4">
-        <Typography.Title level={3} style={{ margin: 0 }}>
-          New Note
-        </Typography.Title>
-        {draftSaved && (
-          <Tag icon={<FormOutlined />} color="processing">
-            Draft auto-saved
-          </Tag>
-        )}
+        <Typography.Title level={3} style={{ margin: 0 }}>{t("new.title")}</Typography.Title>
+        {draftSaved && <Tag icon={<FormOutlined />} color="processing">{t("new.draftSaved")}</Tag>}
       </div>
 
       <Card>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={handleSubmit}
-          autoComplete="off"
-          onValuesChange={handleValuesChange}
-        >
-          <Form.Item
-            name="title"
-            label="Title"
-            rules={[
-              { required: true, message: "Please enter a title" },
-              { max: 200, message: "Title cannot exceed 200 characters" },
-            ]}
-          >
-            <Input placeholder="Enter note title..." />
+        <Form form={form} layout="vertical" onFinish={handleSubmit}
+          autoComplete="off" onValuesChange={handleValuesChange}>
+          <Form.Item name="title" label={t("new.titleLabel")}
+            rules={[{ required: true, message: t("new.titleRequired") }, { max: 200, message: t("new.titleMax") }]}>
+            <Input placeholder={t("new.titlePlaceholder")} />
           </Form.Item>
 
-          <Form.Item
-            name="content"
-            label="Content"
-            rules={[
-              { required: true, message: "Please enter content" },
-              { max: 50000, message: "Content cannot exceed 50000 characters" },
-            ]}
-          >
-            <Tabs
-              items={[
-                {
-                  key: "write",
-                  label: <span><FormOutlined /> Write</span>,
-                  children: (
-                    <TextArea
-                      rows={12}
-                      placeholder="Write your note here... (Markdown supported)"
-                      showCount
-                      maxLength={50000}
-                    />
-                  ),
-                },
-                {
-                  key: "preview",
-                  label: <span><EyeOutlined /> Preview</span>,
-                  children: (
-                    <div
-                      className="note-content"
-                      style={{
-                        minHeight: 300,
-                        padding: "8px 12px",
-                        border: "1px solid #d9d9d9",
-                        borderRadius: 6,
-                        background: "#fff",
-                      }}
-                    >
-                      {content ? (
-                        <ReactMarkdown>{content}</ReactMarkdown>
-                      ) : (
-                        <Typography.Text type="secondary">
-                          Nothing to preview yet
-                        </Typography.Text>
-                      )}
-                    </div>
-                  ),
-                },
-              ]}
-            />
+          <Form.Item name="content" label={t("new.contentLabel")}
+            rules={[{ required: true, message: t("new.contentRequired") }, { max: 50000, message: t("new.contentMax") }]}>
+            <Tabs items={[
+              {
+                key: "write", label: <span><FormOutlined /> {t("new.write")}</span>,
+                children: <TextArea rows={12} placeholder={t("new.contentPlaceholder")}
+                  showCount maxLength={50000} />,
+              },
+              {
+                key: "preview", label: <span><EyeOutlined /> {t("new.preview")}</span>,
+                children: (
+                  <div className="note-content" style={{
+                    minHeight: 300, padding: "8px 12px",
+                    border: "1px solid #d9d9d9", borderRadius: 6, background: "#fff",
+                  }}>
+                    {content ? <ReactMarkdown>{content}</ReactMarkdown>
+                      : <Typography.Text type="secondary">{t("new.noPreview")}</Typography.Text>}
+                  </div>
+                ),
+              },
+            ]} />
           </Form.Item>
 
-          <Form.Item name="tags" label="Tags">
-            <Input placeholder="Separate tags with commas, e.g. work,tech,react" />
+          <Form.Item name="tags" label={t("new.tagsLabel")}>
+            <Input placeholder={t("new.tagsPlaceholder")} />
           </Form.Item>
 
           <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              icon={<SaveOutlined />}
-              loading={submitting}
-            >
-              Save Note
+            <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={submitting}>
+              {t("new.save")}
             </Button>
             {hasDraft(DRAFT_KEY) && (
-              <Button
-                type="link"
-                danger
-                onClick={() => {
-                  clearDraft(DRAFT_KEY);
-                  form.resetFields();
-                  setContent("");
-                  setDraftSaved(false);
-                }}
-                style={{ marginLeft: 12 }}
-              >
-                Discard draft
+              <Button type="link" danger onClick={() => {
+                clearDraft(DRAFT_KEY);
+                form.resetFields();
+                setContent("");
+                setDraftSaved(false);
+              }} style={{ marginLeft: 12 }}>
+                {t("new.discardDraft")}
               </Button>
             )}
           </Form.Item>
