@@ -232,8 +232,7 @@ export default function HomePage() {
                         <div className="prose prose-sm max-w-none mb-2"
                           style={{ fontSize: 13, lineHeight: 1.6, color: "#666", maxHeight: 60, overflow: "hidden" }}>
                           <ReactMarkdown>
-                            {note.content.substring(0, 200)}
-                            {note.content.length > 200 ? "..." : ""}
+                              {note.content.substring(0, 200) + (note.content.length > 200 ? "..." : "")}
                           </ReactMarkdown>
                         </div>
                         <div className="flex items-center justify-between">
