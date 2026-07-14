@@ -11,7 +11,7 @@ import {
   CalendarOutlined, TagsOutlined, SortAscendingOutlined,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
-import { notesApi } from "@/lib/api";
+import { notesApi, Note } from "@/lib/api";
 import { useLang } from "@/lib/LangContext";
 
 const { Text, Paragraph } = Typography;
