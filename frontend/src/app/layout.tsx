@@ -1,6 +1,6 @@
 "use client";
 
-import { ConfigProvider, Layout, Menu, Button, Dropdown, Space } from "antd";
+import { ConfigProvider, Layout, Menu, Button, Dropdown, Space, theme as antdTheme } from "antd";
 import { StyleProvider } from "@ant-design/cssinjs";
 import {
   EditOutlined, FileTextOutlined,
@@ -75,7 +75,7 @@ export default function RootLayout({
           <LangProvider>
             <ConfigProvider
               theme={{
-                algorithm: ConfigProvider.config?.theme?.defaultAlgorithm,
+                algorithm: antdTheme.defaultAlgorithm,
                 token: { colorPrimary: "#1677ff", borderRadius: 6 },
               }}
             >
