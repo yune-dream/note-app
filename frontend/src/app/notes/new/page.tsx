@@ -124,7 +124,7 @@ export default function NewNotePage() {
           {allTags.length > 0 && (
             <div className="mb-3">
               <Typography.Text type="secondary" style={{ fontSize: 12 }}>
-                Existing tags:
+                {t("new.existingTags")}
               </Typography.Text>
               <div className="mt-1">
                 {allTags.map((tag) => (
