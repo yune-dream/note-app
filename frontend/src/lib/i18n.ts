@@ -115,7 +115,6 @@ export const translations: Record<Locale, Record<string, string>> = {
     "new.contentPlaceholder": "在此编写笔记...（支持 Markdown）",
     "new.tagsLabel": "标签",
     "new.existingTags": "已有标签",
-    "new.existingTags": "Existing tags",
     "new.tagsPlaceholder": "多个标签用逗号分隔，如: 工作,技术",
     "new.save": "保存笔记",
     "new.draftSaved": "草稿已自动保存",
