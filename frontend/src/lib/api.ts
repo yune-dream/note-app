@@ -61,6 +61,12 @@ export const notesApi = {
     request<{ message: string }>(`/api/notes/${id}`, {
       method: "DELETE",
     }),
+  batchDelete: (ids: number[]) =>
+    request<{ deleted: number }>("/api/notes/batch-delete", {
+      method: "POST",
+      body: JSON.stringify(ids),
+    }),
+  allTags: () => request<string[]>("/api/notes/tags"),
   exportAll: () => request<Note[]>("/api/notes/export"),
   importNotes: (notes: { title: string; content: string; tags: string }[]) =>
     request<{ imported: number; total: number }>("/api/notes/import", {

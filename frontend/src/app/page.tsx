@@ -3,18 +3,20 @@
 import { useEffect, useState, useRef } from "react";
 import {
   Card, Input, Tag, Spin, Empty, Button, Space, Popconfirm,
-  message, Typography, Pagination, Select,
+  message, Typography, Pagination, Select, Checkbox,
 } from "antd";
 import {
   PlusOutlined, SearchOutlined, DeleteOutlined,
   DownloadOutlined, UploadOutlined,
   CalendarOutlined, TagsOutlined, SortAscendingOutlined,
 } from "@ant-design/icons";
+import ReactMarkdown from "react-markdown";
 import { useRouter } from "next/navigation";
 import { notesApi, Note } from "@/lib/api";
 import { useLang } from "@/lib/LangContext";
 
-const { Text, Paragraph } = Typography;
+const { Text } = Typography;
+const { Paragraph } = Typography;
 
 export default function HomePage() {
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [sortBy, setSortBy] = useState("updated_at");
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const perPage = 10;
 
   const fetchNotes = async () => {
@@ -47,12 +50,27 @@ export default function HomePage() {
   };
 
   useEffect(() => { fetchNotes(); }, [search, selectedTag, page, sortBy]);
-  useEffect(() => { setPage(1); }, [search, selectedTag, sortBy]);
+  useEffect(() => { setPage(1); setSelectedIds(new Set()); }, [search, selectedTag, sortBy]);
 
-  const handleDelete = async (id: number) => {
+  const toggleSelect = (id: number) => {
+    const next = new Set(selectedIds);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setSelectedIds(next);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === notes.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(notes.map((n) => n.id)));
+    }
+  };
+
+  const handleBatchDelete = async () => {
     try {
-      await notesApi.delete(id);
+      await notesApi.batchDelete([...selectedIds]);
       message.success(t("notes.deleteSuccess"));
+      setSelectedIds(new Set());
       fetchNotes();
     } catch {
       message.error(t("notes.deleteFailed"));
@@ -90,10 +108,23 @@ export default function HomePage() {
       message.error(t("notes.importFailed"));
     }
   };
+  
+  const handleDelete = async (id: number) => {
+    try {
+      await notesApi.delete(id);
+      message.success(t("notes.deleteSuccess"));
+      fetchNotes();
+    } catch {
+      message.error(t("notes.deleteFailed"));
+    }
+  };
 
   const allTags = Array.from(
-    new Set(notes.flatMap((n) => n.tags.split(",").map((t) => t.trim()).filter(Boolean)))
+    new Set(notes.flatMap((n) => n.tags.split(",").map((tag) => tag.trim()).filter(Boolean)))
   );
+
+  const allSelected = notes.length > 0 && selectedIds.size === notes.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < notes.length;
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -139,6 +170,9 @@ export default function HomePage() {
           ]}
           prefix={<SortAscendingOutlined />}
         />
+        <Checkbox checked={allSelected} indeterminate={someSelected} onChange={toggleSelectAll}>
+          {t("notes.selectAll")}
+        </Checkbox>
       </div>
 
       {allTags.length > 0 && (
@@ -171,36 +205,53 @@ export default function HomePage() {
         ) : (
           <div className="grid gap-4">
             {notes.map((note) => (
-              <Card key={note.id} hoverable size="small"
-                onClick={() => router.push(`/notes/${note.id}`)}
-                actions={[
-                  <Popconfirm key="delete" title={t("notes.deleteConfirm")}
-                    onConfirm={(e) => { e?.stopPropagation(); handleDelete(note.id); }}
-                    onCancel={(e) => e?.stopPropagation()}>
-                    <DeleteOutlined key="delete" onClick={(e) => e.stopPropagation()} />
-                  </Popconfirm>,
-                ]}>
-                <Card.Meta
-                  title={<Text strong ellipsis style={{ maxWidth: "100%" }}>{note.title}</Text>}
-                  description={
-                    <>
-                      <Paragraph ellipsis={{ rows: 2 }} type="secondary" style={{ marginBottom: 8 }}>
-                        {note.content}
-                      </Paragraph>
-                      <div className="flex items-center justify-between">
-                        <Space size={4}>
-                          <CalendarOutlined />
-                          <Text type="secondary" style={{ fontSize: 12 }}>{note.updated_at}</Text>
-                        </Space>
-                        <Space size={4}>
-                          {note.tags?.split(",").map((tt) => tt.trim()).filter(Boolean).slice(0, 3).map((tag) => (
-                            <Tag key={tag} color="processing" style={{ fontSize: 11 }}>{tag}</Tag>
-                          ))}
-                        </Space>
-                      </div>
-                    </>
-                  } />
-              </Card>
+              <div key={note.id} className="flex items-start gap-2">
+                <Checkbox
+                  checked={selectedIds.has(note.id)}
+                  onChange={() => toggleSelect(note.id)}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ marginTop: 16, flexShrink: 0 }}
+                />
+                <Card
+                  hoverable
+                  size="small"
+                  className="flex-1"
+                  onClick={() => router.push(`/notes/${note.id}`)}
+                  actions={[
+                    <Popconfirm key="delete" title={t("notes.deleteConfirm")}
+                      onConfirm={(e) => { e?.stopPropagation(); handleDelete(note.id); }}
+                      onCancel={(e) => e?.stopPropagation()}>
+                      <DeleteOutlined key="delete" onClick={(e) => e.stopPropagation()} />
+                    </Popconfirm>,
+                  ]}
+                >
+                  <Card.Meta
+                    title={<Text strong ellipsis style={{ maxWidth: "100%" }}>{note.title}</Text>}
+                    description={
+                      <>
+                        <div className="prose prose-sm max-w-none mb-2"
+                          style={{ fontSize: 13, lineHeight: 1.6, color: "#666", maxHeight: 60, overflow: "hidden" }}>
+                          <ReactMarkdown>
+                            {note.content.substring(0, 200)}
+                            {note.content.length > 200 ? "..." : ""}
+                          </ReactMarkdown>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Space size={4}>
+                            <CalendarOutlined />
+                            <Text type="secondary" style={{ fontSize: 12 }}>{note.updated_at}</Text>
+                          </Space>
+                          <Space size={4}>
+                            {note.tags?.split(",").map((tt) => tt.trim()).filter(Boolean).slice(0, 3).map((tag) => (
+                              <Tag key={tag} color="processing" style={{ fontSize: 11 }}>{tag}</Tag>
+                            ))}
+                          </Space>
+                        </div>
+                      </>
+                    }
+                  />
+                </Card>
+              </div>
             ))}
           </div>
         )}
@@ -212,10 +263,25 @@ export default function HomePage() {
             current={page}
             total={total}
             pageSize={perPage}
-            onChange={(p) => setPage(p)}
+            onChange={(p) => { setPage(p); setSelectedIds(new Set()); }}
             showTotal={(total) => `${t("notes.totalPrefix")} ${total} ${t("notes.totalSuffix")}`}
             showSizeChanger={false}
           />
+        </div>
+      )}
+
+      {selectedIds.size > 0 && (
+        <div className="sticky bottom-0 bg-white border-t shadow-lg p-3 mt-4 rounded flex items-center justify-between z-50">
+          <Text strong>{t("notes.selectedCount").replace("{n}", String(selectedIds.size))}</Text>
+          <Space>
+            <Button onClick={() => setSelectedIds(new Set())}>{t("detail.cancel")}</Button>
+            <Popconfirm
+              title={t("notes.confirmBatchDelete").replace("{n}", String(selectedIds.size))}
+              onConfirm={handleBatchDelete}
+            >
+              <Button danger icon={<DeleteOutlined />}>{t("notes.batchDelete")}</Button>
+            </Popconfirm>
+          </Space>
         </div>
       )}
     </div>

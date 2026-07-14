@@ -22,6 +22,7 @@ export default function NewNotePage() {
   const [content, setContent] = useState("");
   const [draftSaved, setDraftSaved] = useState(false);
   const [tabKey, setTabKey] = useState("write");
+  const [allTags, setAllTags] = useState<string[]>([]);
 
   useEffect(() => {
     const draft = loadDraft(DRAFT_KEY);
@@ -42,6 +43,10 @@ export default function NewNotePage() {
     }, 500);
     return () => clearTimeout(timer);
   }, [draftSaved, content]);
+
+  useEffect(() => {
+    notesApi.allTags().then(setAllTags).catch(() => {});
+  }, []);
 
   const handleValuesChange = (_: unknown, all: Record<string, string>) => {
     setContent(all.content || "");
@@ -116,6 +121,27 @@ export default function NewNotePage() {
           <Form.Item name="tags" label={t("new.tagsLabel")}>
             <Input placeholder={t("new.tagsPlaceholder")} />
           </Form.Item>
+          {allTags.length > 0 && (
+            <div className="mb-3">
+              <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                Existing tags:
+              </Typography.Text>
+              <div className="mt-1">
+                {allTags.map((tag) => (
+                  <Tag key={tag} style={{ cursor: "pointer", marginBottom: 4 }}
+                    onClick={() => {
+                      const current = form.getFieldValue("tags") || "";
+                      const tags = current ? current.split(",").map((t: string) => t.trim()).filter(Boolean) : [];
+                      if (!tags.includes(tag)) {
+                        form.setFieldsValue({ tags: [...tags, tag].join(",") });
+                      }
+                    }}>
+                    + {tag}
+                  </Tag>
+                ))}
+              </div>
+            </div>
+          )}
 
           <Form.Item>
             <Button type="primary" htmlType="submit" icon={<SaveOutlined />} loading={submitting}>

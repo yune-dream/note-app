@@ -175,5 +175,35 @@ def import_notes():
     return jsonify({"imported": imported, "total": len(data)})
 
 
+@app.route("/api/notes/batch-delete", methods=["POST"])
+def batch_delete_notes():
+    """Delete multiple notes by IDs"""
+    data = request.get_json()
+    if not isinstance(data, list) or len(data) == 0:
+        return jsonify({"error": "Expected a non-empty array of note IDs"}), 400
+
+    conn = get_db()
+    placeholders = ",".join("?" for _ in data)
+    conn.execute(f"DELETE FROM notes WHERE id IN ({placeholders})", data)
+    conn.commit()
+    conn.close()
+    return jsonify({"deleted": len(data)})
+
+
+@app.route("/api/notes/tags", methods=["GET"])
+def list_tags():
+    """Get all unique tags"""
+    conn = get_db()
+    rows = conn.execute("SELECT DISTINCT tags FROM notes WHERE tags != ''").fetchall()
+    conn.close()
+    all_tags = set()
+    for row in rows:
+        for tag in row["tags"].split(","):
+            tag = tag.strip()
+            if tag:
+                all_tags.add(tag)
+    return jsonify(sorted(all_tags))
+
+
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
