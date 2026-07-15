@@ -4,6 +4,9 @@
 
 基于 Next.js + Flask 的全栈笔记管理应用。
 
+# 线上部署访问 URL；
+https://note-app-mu-seven.vercel.app/
+
 ## 技术栈
 
 | 层级 | 技术 |
