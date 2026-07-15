@@ -115,27 +115,6 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 - 前端显示 API 调用失败的错误提示
 - 删除操作需二次确认
 
-<<<<<<< HEAD
-## Git History
-
-```
-082b96f fix: menu selection not updating on route change
-b5f79aa feat: add batch import/export notes as JSON
-4218af7 fix: Form.Item wrapping Tabs prevents content validation
-4dfddaf feat: add i18n support with English/Chinese language toggle
-17aaec3 feat: add auto-save draft feature with localStorage
-9803366 feat: add pagination, sorting, and Markdown preview
-e021bf1 restore: add back code_review.md and prompt_log.md
-ca339e1 chore: remove commit history, scoring table...
-e244cc8 docs: add README, prompt log, AI review report...
-f5ab8b6 chore: add antd dependencies and API config
-49151b3 feat: add Next.js frontend with Ant Design UI
-3dd57c7 feat: add Flask backend with SQLite CRUD API
-b180147 chore: init project structure with Next.js + Flask
-```
-
-13 commits across 4 dates (Jul 10-13).
-=======
 
 ## 部署地址
 
@@ -144,14 +123,8 @@ b180147 chore: init project structure with Next.js + Flask
 | 前端 (Vercel) | https://note-app-mu-seven.vercel.app |
 | 后端 (Railway) | https://note-app-production-1abc.up.railway.app |
 
-<<<<<<< HEAD
-Set NEXT_PUBLIC_API_URL in Vercel env vars to the Railway URL.
->>>>>>> a88486f (docs: update README, prompt_log, code_review with batch/markdown/tag features)
-=======
 在 Vercel 环境变量中设置 NEXT_PUBLIC_API_URL 为 Railway 域名。
->>>>>>> 30d7981 (chore: make Chinese README default, rename English to README.en.md)
 
 ## License
 
 MIT
-
