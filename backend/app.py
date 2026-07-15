@@ -73,11 +73,10 @@ def create_note():
 
     timestamp = now()
     conn = get_db()
-    cursor = conn.execute(
+    note_id = conn.insert(
         "INSERT INTO notes (title, content, tags, created_at, updated_at) VALUES (?, ?, ?, ?, ?)",
         (title, content, tags, timestamp, timestamp),
     )
-    note_id = cursor.lastrowid
     conn.commit()
     note = conn.execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
     conn.close()
