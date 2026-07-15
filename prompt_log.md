@@ -71,3 +71,22 @@ Records of prompts used during development and AI-generated outputs.
 - Files: frontend/src/app/layout.tsx
 - Prompt: Fix navigation menu not highlighting on route change
 - Result: Replaced defaultSelectedKeys with selectedKeys + usePathname
+
+## 15. Vercel Deployment TypeScript Fix
+- Fix layout.tsx ConfigProvider theme prop error
+
+## 16. Railway Backend Deployment
+- Fix requirements.txt UTF-16 BOM encoding
+
+## 17. Connect Frontend + Backend
+- Update Vercel NEXT_PUBLIC_API_URL to Railway domain
+
+## 18. Batch Operations + Markdown Preview + Tag Suggestions
+- Files: backend/app.py, frontend/src/app/page.tsx, frontend/src/app/notes/new/page.tsx
+- Prompt: Add checkbox multi-select, batch delete, Markdown list preview, tag suggestions
+- Result: POST /api/notes/batch-delete, GET /api/notes/tags endpoints; checkboxes with batch bar; ReactMarkdown in cards; clickable existing tags
+
+## 19. Fix i18n Duplicate Key
+- Files: frontend/src/lib/i18n.ts
+- Prompt: Fix duplicate new.existingTags key causing Vercel build failure
+- Result: Removed duplicate entry, build passed

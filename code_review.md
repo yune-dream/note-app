@@ -7,6 +7,19 @@ Reviewer: Codex AI
 
 The project is functionally complete with clean architecture. Primary issues are optimization-oriented rather than critical bugs.
 
+
+## 8. UTF-16 BOM in requirements.txt
+- File: backend/requirements.txt
+- Risk: Medium
+- File created by PowerShell > redirection uses UTF-16 LE, causing pip to fail on Railway.
+- Fix: Rewritten as clean UTF-8.
+
+## 9. Missing Type Import
+- File: frontend/src/app/page.tsx
+- Risk: Medium
+- Note type not imported, caught by Vercel TypeScript build.
+- Fix: Added Note to import.
+
 ---
 
 ## Critical Issues
@@ -14,6 +27,19 @@ The project is functionally complete with clean architecture. Primary issues are
 ### None found
 
 The codebase has no critical security or functionality issues.
+
+
+## 8. UTF-16 BOM in requirements.txt
+- File: backend/requirements.txt
+- Risk: Medium
+- File created by PowerShell > redirection uses UTF-16 LE, causing pip to fail on Railway.
+- Fix: Rewritten as clean UTF-8.
+
+## 9. Missing Type Import
+- File: frontend/src/app/page.tsx
+- Risk: Medium
+- Note type not imported, caught by Vercel TypeScript build.
+- Fix: Added Note to import.
 
 ---
 
@@ -32,6 +58,19 @@ The codebase has no critical security or functionality issues.
 - Risk: Low
 - Finding: Used defaultSelectedKeys which only sets the initial selection. After navigating, the menu always showed the initial item as selected.
 - Fix Applied: Replaced with selectedKeys plus usePathname. Now correctly highlights based on current route.
+
+
+## 8. UTF-16 BOM in requirements.txt
+- File: backend/requirements.txt
+- Risk: Medium
+- File created by PowerShell > redirection uses UTF-16 LE, causing pip to fail on Railway.
+- Fix: Rewritten as clean UTF-8.
+
+## 9. Missing Type Import
+- File: frontend/src/app/page.tsx
+- Risk: Medium
+- Note type not imported, caught by Vercel TypeScript build.
+- Fix: Added Note to import.
 
 ---
 
@@ -66,6 +105,19 @@ The codebase has no critical security or functionality issues.
 - Finding: Files containing Chinese characters written through Codex have garbled text.
 - Recommendation: Use Python or PowerShell with explicit UTF-8 encoding for non-ASCII files.
 
+
+## 8. UTF-16 BOM in requirements.txt
+- File: backend/requirements.txt
+- Risk: Medium
+- File created by PowerShell > redirection uses UTF-16 LE, causing pip to fail on Railway.
+- Fix: Rewritten as clean UTF-8.
+
+## 9. Missing Type Import
+- File: frontend/src/app/page.tsx
+- Risk: Medium
+- Note type not imported, caught by Vercel TypeScript build.
+- Fix: Added Note to import.
+
 ---
 
 ## Positive Findings
@@ -78,8 +130,36 @@ The codebase has no critical security or functionality issues.
 - Full English and Chinese support with i18n
 - Proper API error handling with status codes
 
+
+## 8. UTF-16 BOM in requirements.txt
+- File: backend/requirements.txt
+- Risk: Medium
+- File created by PowerShell > redirection uses UTF-16 LE, causing pip to fail on Railway.
+- Fix: Rewritten as clean UTF-8.
+
+## 9. Missing Type Import
+- File: frontend/src/app/page.tsx
+- Risk: Medium
+- Note type not imported, caught by Vercel TypeScript build.
+- Fix: Added Note to import.
+
 ---
 
 ## Conclusion
 
 The project is stable and feature-complete. The most impactful improvements would be adding a global error boundary and skeleton loading states.
+
+## 10. ReactMarkdown Children Type
+
+- File: frontend/src/app/page.tsx
+- Risk: Medium
+- Finding: ReactMarkdown children must be a single string. Two separate JSX expressions caused a TypeScript error on Vercel build.
+- Fix: Concatenated the two expressions into one string.
+
+## 11. Duplicate i18n Key
+
+- File: frontend/src/lib/i18n.ts
+- Risk: Low
+- Finding: Python replacement script added new.existingTags to both English and Chinese sections, but string matching was too broad, creating a duplicate in the Chinese section.
+- Fix: Removed the duplicate entry programmatically.
+---

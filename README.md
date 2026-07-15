@@ -68,6 +68,9 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 | Language | English/Chinese toggle, persisted |
 | Export | Download all notes as JSON |
 | Import | Bulk create notes from JSON file |
+| Batch Delete | Multi-select notes with checkboxes, delete at once |
+| Markdown List | Markdown preview rendered in notes list cards |
+| Tag Suggest | Click existing tags to add when creating notes |
 
 ## API Endpoints
 
@@ -87,6 +90,8 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 |--------|------|-------------|
 | GET | /api/notes/export | Export all notes as JSON array |
 | POST | /api/notes/import | Import notes from JSON array |
+| POST | /api/notes/batch-delete | Delete multiple notes by IDs |
+| GET | /api/notes/tags | Get all unique tags |
 
 ### Note Schema
 
@@ -108,6 +113,7 @@ NEXT_PUBLIC_API_URL=http://localhost:5000
 - Frontend shows error messages for failed API calls
 - Delete operations require confirmation dialog
 
+<<<<<<< HEAD
 ## Git History
 
 ```
@@ -127,6 +133,17 @@ b180147 chore: init project structure with Next.js + Flask
 ```
 
 13 commits across 4 dates (Jul 10-13).
+=======
+
+## Deployment
+
+| Service | URL |
+|---------|-----|
+| Frontend (Vercel) | https://note-app-mu-seven.vercel.app |
+| Backend (Railway) | https://note-app-production-1abc.up.railway.app |
+
+Set NEXT_PUBLIC_API_URL in Vercel env vars to the Railway URL.
+>>>>>>> a88486f (docs: update README, prompt_log, code_review with batch/markdown/tag features)
 
 ## License
 
